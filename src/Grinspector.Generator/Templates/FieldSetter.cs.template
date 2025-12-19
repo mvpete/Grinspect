@@ -1,0 +1,10 @@
+            set
+            {
+                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField("{{FIELD_NAME}}", 
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+                if (fieldInfo == null)
+                    throw new System.InvalidOperationException("Field '{{FIELD_NAME}}' not found");
+
+                fieldInfo.SetValue(_instance, value);
+            }

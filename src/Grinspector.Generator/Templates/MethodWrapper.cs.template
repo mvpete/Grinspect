@@ -1,0 +1,11 @@
+        public {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+        {
+            var methodInfo = typeof({{TYPE_FULL_NAME}}).GetMethod("{{METHOD_NAME}}", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            if (methodInfo == null)
+                throw new System.InvalidOperationException("Method '{{METHOD_NAME}}' not found");
+
+            {{INVOKE}}
+        }
+
