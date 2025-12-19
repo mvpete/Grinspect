@@ -31,6 +31,9 @@ class Program
         var barInspector = new Bar_Privates(barInstance);
         var doubled = barInspector.Double();
         Console.WriteLine($"Double() = {doubled}");
+        
+        Console.WriteLine("\n=== Testing Compilation Cost ===");
+        CompilationCostDemo.Run();
     }
 }
 

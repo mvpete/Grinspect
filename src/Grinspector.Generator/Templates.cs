@@ -28,28 +28,53 @@ namespace {{NAMESPACE}}
 }
 ";
 
-    public const string Method = @"        public {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+    // Expression tree-based method template - compiles delegate once, cached in static field
+    public const string Method = @"        private static readonly {{DELEGATE_TYPE}} _{{METHOD_NAME}}_delegate = 
+            CompileMethod_{{METHOD_NAME}}();
+
+        private static {{DELEGATE_TYPE}} CompileMethod_{{METHOD_NAME}}()
         {
             var methodInfo = typeof({{TYPE_FULL_NAME}}).GetMethod(""{{METHOD_NAME}}"", 
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic{{TYPE_PARAMS}});
 
             if (methodInfo == null)
                 throw new System.InvalidOperationException(""Method '{{METHOD_NAME}}' not found"");
 
-            {{INVOKE}}
+            var instanceParam = System.Linq.Expressions.Expression.Parameter(typeof({{FULL_TYPE_NAME}}), ""instance"");
+{{PARAM_EXPRESSIONS}}
+            var methodCall = System.Linq.Expressions.Expression.Call(instanceParam, methodInfo{{PARAM_ARGS}});
+            return System.Linq.Expressions.Expression.Lambda<{{DELEGATE_TYPE}}>(
+                methodCall{{LAMBDA_PARAMS}}).Compile();
+        }
+
+        public {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+        {
+            {{DELEGATE_INVOKE}}
         }
 
 ";
 
-    public const string StaticMethod = @"        public static {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+    // Expression tree-based static method template
+    public const string StaticMethod = @"        private static readonly {{DELEGATE_TYPE}} _{{METHOD_NAME}}_delegate = 
+            CompileStaticMethod_{{METHOD_NAME}}();
+
+        private static {{DELEGATE_TYPE}} CompileStaticMethod_{{METHOD_NAME}}()
         {
             var methodInfo = typeof({{TYPE_FULL_NAME}}).GetMethod(""{{METHOD_NAME}}"", 
-                {{BINDING_FLAGS}});
+                {{BINDING_FLAGS}}{{TYPE_PARAMS}});
 
             if (methodInfo == null)
                 throw new System.InvalidOperationException(""Method '{{METHOD_NAME}}' not found"");
 
-            {{INVOKE}}
+{{PARAM_EXPRESSIONS}}
+            var methodCall = System.Linq.Expressions.Expression.Call(methodInfo{{PARAM_ARGS}});
+            return System.Linq.Expressions.Expression.Lambda<{{DELEGATE_TYPE}}>(
+                methodCall{{LAMBDA_PARAMS}}).Compile();
+        }
+
+        public static {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+        {
+            {{DELEGATE_INVOKE}}
         }
 
 ";
@@ -66,52 +91,110 @@ namespace {{NAMESPACE}}
 
 ";
 
+    // Expression tree-based property getter
     public const string PropertyGetter = @"            get
             {
-                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-                if (propertyInfo == null)
-                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
-
-                return ({{PROPERTY_TYPE}})propertyInfo.GetValue(_instance)!;
+                return _{{PROPERTY_NAME}}_getter(_instance);
             }
 ";
 
+    public const string PropertyGetterDelegate = @"        private static readonly System.Func<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}> _{{PROPERTY_NAME}}_getter = 
+            CompilePropertyGetter_{{PROPERTY_NAME}}();
+
+        private static System.Func<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}> CompilePropertyGetter_{{PROPERTY_NAME}}()
+        {
+            var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            if (propertyInfo == null)
+                throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+            var instanceParam = System.Linq.Expressions.Expression.Parameter(typeof({{FULL_TYPE_NAME}}), ""instance"");
+            var propertyAccess = System.Linq.Expressions.Expression.Property(instanceParam, propertyInfo);
+            return System.Linq.Expressions.Expression.Lambda<System.Func<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}>>(
+                propertyAccess, instanceParam).Compile();
+        }
+
+";
+
+    // Expression tree-based static property getter
     public const string StaticPropertyGetter = @"            get
             {
-                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
-                    {{BINDING_FLAGS}});
-
-                if (propertyInfo == null)
-                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
-
-                return ({{PROPERTY_TYPE}})propertyInfo.GetValue(null)!;
+                return _{{PROPERTY_NAME}}_getter();
             }
 ";
 
+    public const string StaticPropertyGetterDelegate = @"        private static readonly System.Func<{{PROPERTY_TYPE}}> _{{PROPERTY_NAME}}_getter = 
+            CompileStaticPropertyGetter_{{PROPERTY_NAME}}();
+
+        private static System.Func<{{PROPERTY_TYPE}}> CompileStaticPropertyGetter_{{PROPERTY_NAME}}()
+        {
+            var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                {{BINDING_FLAGS}});
+
+            if (propertyInfo == null)
+                throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+            var propertyAccess = System.Linq.Expressions.Expression.Property(null, propertyInfo);
+            return System.Linq.Expressions.Expression.Lambda<System.Func<{{PROPERTY_TYPE}}>>(
+                propertyAccess).Compile();
+        }
+
+";
+
+    // Expression tree-based property setter
     public const string PropertySetter = @"            set
             {
-                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-                if (propertyInfo == null)
-                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
-
-                propertyInfo.SetValue(_instance, value);
+                _{{PROPERTY_NAME}}_setter(_instance, value);
             }
 ";
 
+    public const string PropertySetterDelegate = @"        private static readonly System.Action<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}> _{{PROPERTY_NAME}}_setter = 
+            CompilePropertySetter_{{PROPERTY_NAME}}();
+
+        private static System.Action<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}> CompilePropertySetter_{{PROPERTY_NAME}}()
+        {
+            var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            if (propertyInfo == null)
+                throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+            var instanceParam = System.Linq.Expressions.Expression.Parameter(typeof({{FULL_TYPE_NAME}}), ""instance"");
+            var valueParam = System.Linq.Expressions.Expression.Parameter(typeof({{PROPERTY_TYPE}}), ""value"");
+            var propertyAccess = System.Linq.Expressions.Expression.Property(instanceParam, propertyInfo);
+            var assignment = System.Linq.Expressions.Expression.Assign(propertyAccess, valueParam);
+            return System.Linq.Expressions.Expression.Lambda<System.Action<{{FULL_TYPE_NAME}}, {{PROPERTY_TYPE}}>>(
+                assignment, instanceParam, valueParam).Compile();
+        }
+
+";
+
+    // Expression tree-based static property setter
     public const string StaticPropertySetter = @"            set
             {
-                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
-                    {{BINDING_FLAGS}});
-
-                if (propertyInfo == null)
-                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
-
-                propertyInfo.SetValue(null, value);
+                _{{PROPERTY_NAME}}_setter(value);
             }
+";
+
+    public const string StaticPropertySetterDelegate = @"        private static readonly System.Action<{{PROPERTY_TYPE}}> _{{PROPERTY_NAME}}_setter = 
+            CompileStaticPropertySetter_{{PROPERTY_NAME}}();
+
+        private static System.Action<{{PROPERTY_TYPE}}> CompileStaticPropertySetter_{{PROPERTY_NAME}}()
+        {
+            var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                {{BINDING_FLAGS}});
+
+            if (propertyInfo == null)
+                throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+            var valueParam = System.Linq.Expressions.Expression.Parameter(typeof({{PROPERTY_TYPE}}), ""value"");
+            var propertyAccess = System.Linq.Expressions.Expression.Property(null, propertyInfo);
+            var assignment = System.Linq.Expressions.Expression.Assign(propertyAccess, valueParam);
+            return System.Linq.Expressions.Expression.Lambda<System.Action<{{PROPERTY_TYPE}}>>(
+                assignment, valueParam).Compile();
+        }
+
 ";
 
     public const string Field = @"        public {{FIELD_TYPE}} {{FIELD_NAME}}
@@ -126,55 +209,117 @@ namespace {{NAMESPACE}}
 
 ";
 
+    // Expression tree-based field getter
     public const string FieldGetter = @"            get
             {
-                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-                if (fieldInfo == null)
-                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
-
-                return ({{FIELD_TYPE}})fieldInfo.GetValue(_instance)!;
+                return _{{FIELD_NAME}}_getter(_instance);
             }
 ";
 
+    public const string FieldGetterDelegate = @"        private static readonly System.Func<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}> _{{FIELD_NAME}}_getter = 
+            CompileFieldGetter_{{FIELD_NAME}}();
+
+        private static System.Func<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}> CompileFieldGetter_{{FIELD_NAME}}()
+        {
+            var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            if (fieldInfo == null)
+                throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+            var instanceParam = System.Linq.Expressions.Expression.Parameter(typeof({{FULL_TYPE_NAME}}), ""instance"");
+            var fieldAccess = System.Linq.Expressions.Expression.Field(instanceParam, fieldInfo);
+            return System.Linq.Expressions.Expression.Lambda<System.Func<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}>>(
+                fieldAccess, instanceParam).Compile();
+        }
+
+";
+
+    // Expression tree-based static field getter
     public const string StaticFieldGetter = @"            get
             {
-                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
-                    {{BINDING_FLAGS}});
-
-                if (fieldInfo == null)
-                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
-
-                return ({{FIELD_TYPE}})fieldInfo.GetValue(null)!;
+                return _{{FIELD_NAME}}_getter();
             }
 ";
 
+    public const string StaticFieldGetterDelegate = @"        private static readonly System.Func<{{FIELD_TYPE}}> _{{FIELD_NAME}}_getter = 
+            CompileStaticFieldGetter_{{FIELD_NAME}}();
+
+        private static System.Func<{{FIELD_TYPE}}> CompileStaticFieldGetter_{{FIELD_NAME}}()
+        {
+            var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                {{BINDING_FLAGS}});
+
+            if (fieldInfo == null)
+                throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+            var fieldAccess = System.Linq.Expressions.Expression.Field(null, fieldInfo);
+            return System.Linq.Expressions.Expression.Lambda<System.Func<{{FIELD_TYPE}}>>(
+                fieldAccess).Compile();
+        }
+
+";
+
+    // Expression tree-based field setter
     public const string FieldSetter = @"            set
             {
-                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
-                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-                if (fieldInfo == null)
-                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
-
-                fieldInfo.SetValue(_instance, value);
+                _{{FIELD_NAME}}_setter(_instance, value);
             }
 ";
 
+    public const string FieldSetterDelegate = @"        private static readonly System.Action<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}> _{{FIELD_NAME}}_setter = 
+            CompileFieldSetter_{{FIELD_NAME}}();
+
+        private static System.Action<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}> CompileFieldSetter_{{FIELD_NAME}}()
+        {
+            var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            if (fieldInfo == null)
+                throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+            var instanceParam = System.Linq.Expressions.Expression.Parameter(typeof({{FULL_TYPE_NAME}}), ""instance"");
+            var valueParam = System.Linq.Expressions.Expression.Parameter(typeof({{FIELD_TYPE}}), ""value"");
+            var fieldAccess = System.Linq.Expressions.Expression.Field(instanceParam, fieldInfo);
+            var assignment = System.Linq.Expressions.Expression.Assign(fieldAccess, valueParam);
+            return System.Linq.Expressions.Expression.Lambda<System.Action<{{FULL_TYPE_NAME}}, {{FIELD_TYPE}}>>(
+                assignment, instanceParam, valueParam).Compile();
+        }
+
+";
+
+    // Expression tree-based static field setter
     public const string StaticFieldSetter = @"            set
             {
-                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
-                    {{BINDING_FLAGS}});
-
-                if (fieldInfo == null)
-                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
-
-                fieldInfo.SetValue(null, value);
+                _{{FIELD_NAME}}_setter(value);
             }
 ";
 
-    public const string Constructor = @"        public static {{TYPE_FULL_NAME}} CreateInstance({{PARAMETERS}})
+    public const string StaticFieldSetterDelegate = @"        private static readonly System.Action<{{FIELD_TYPE}}> _{{FIELD_NAME}}_setter = 
+            CompileStaticFieldSetter_{{FIELD_NAME}}();
+
+        private static System.Action<{{FIELD_TYPE}}> CompileStaticFieldSetter_{{FIELD_NAME}}()
+        {
+            var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                {{BINDING_FLAGS}});
+
+            if (fieldInfo == null)
+                throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+            var valueParam = System.Linq.Expressions.Expression.Parameter(typeof({{FIELD_TYPE}}), ""value"");
+            var fieldAccess = System.Linq.Expressions.Expression.Field(null, fieldInfo);
+            var assignment = System.Linq.Expressions.Expression.Assign(fieldAccess, valueParam);
+            return System.Linq.Expressions.Expression.Lambda<System.Action<{{FIELD_TYPE}}>>(
+                assignment, valueParam).Compile();
+        }
+
+";
+
+    // Expression tree-based constructor
+    public const string Constructor = @"        private static readonly System.Func<{{FUNC_PARAMS}}{{TYPE_FULL_NAME}}> _CreateInstance_delegate = 
+            CompileConstructor();
+
+        private static System.Func<{{FUNC_PARAMS}}{{TYPE_FULL_NAME}}> CompileConstructor()
         {
             var ctorInfo = typeof({{TYPE_FULL_NAME}}).GetConstructor(
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
@@ -185,7 +330,15 @@ namespace {{NAMESPACE}}
             if (ctorInfo == null)
                 throw new System.InvalidOperationException(""Constructor not found"");
 
-            {{INVOKE}}
+{{PARAM_EXPRESSIONS}}
+            var newInstance = System.Linq.Expressions.Expression.New(ctorInfo{{PARAM_ARGS}});
+            return System.Linq.Expressions.Expression.Lambda<System.Func<{{FUNC_PARAMS}}{{TYPE_FULL_NAME}}>>(
+                newInstance{{LAMBDA_PARAMS}}).Compile();
+        }
+
+        public static {{TYPE_FULL_NAME}} CreateInstance({{PARAMETERS}})
+        {
+            {{DELEGATE_INVOKE}}
         }
 
 ";

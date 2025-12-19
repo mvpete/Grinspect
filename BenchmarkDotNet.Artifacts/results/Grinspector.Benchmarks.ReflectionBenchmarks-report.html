@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>Grinspector.Benchmarks.ReflectionBenchmarks-20251219-153122</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.14.0, macOS 26.1 (25B78) [Darwin 25.1.0]
+Apple M3 Pro, 1 CPU, 11 logical and 11 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.125.57005), Arm64 RyuJIT AdvSIMD
+  DefaultJob : .NET 10.0.1 (10.0.125.57005), Arm64 RyuJIT AdvSIMD
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method         </th><th>Mean</th><th>Error</th><th>StdDev</th><th>Ratio</th><th>RatioSD</th>
+</tr>
+</thead><tbody><tr><td>DirectCall</td><td>0.0000 ns</td><td>0.0000 ns</td><td>0.0000 ns</td><td>?</td><td>?</td>
+</tr><tr><td>GrinspectorCall</td><td>0.5266 ns</td><td>0.0050 ns</td><td>0.0039 ns</td><td>?</td><td>?</td>
+</tr><tr><td>RawReflectionCall</td><td>25.8825 ns</td><td>0.1237 ns</td><td>0.1157 ns</td><td>?</td><td>?</td>
+</tr><tr><td>StaticGrinspectorCall</td><td>0.2973 ns</td><td>0.0060 ns</td><td>0.0047 ns</td><td>?</td><td>?</td>
+</tr><tr><td>VoidMethod</td><td>0.9410 ns</td><td>0.0311 ns</td><td>0.0291 ns</td><td>?</td><td>?</td>
+</tr><tr><td>PropertyAccess</td><td>2.0381 ns</td><td>0.0149 ns</td><td>0.0124 ns</td><td>?</td><td>?</td>
+</tr><tr><td>FieldAccess</td><td>2.0438 ns</td><td>0.0096 ns</td><td>0.0075 ns</td><td>?</td><td>?</td>
+</tr></tbody></table>
+</body>
+</html>
