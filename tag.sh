@@ -14,11 +14,19 @@ fi
 VERSION="v$1"
 MESSAGE="${2:-Release $VERSION}"
 
+# Detect the remote name (usually 'origin' or 'upstream')
+REMOTE=$(git remote | head -n 1)
+
+if [ -z "$REMOTE" ]; then
+    echo "Error: No git remote found"
+    exit 1
+fi
+
 # Check if tag already exists
 if git rev-parse "$VERSION" >/dev/null 2>&1; then
     echo "Error: Tag $VERSION already exists"
     echo "To delete it locally: git tag -d $VERSION"
-    echo "To delete it remotely: git push origin :refs/tags/$VERSION"
+    echo "To delete it remotely: git push $REMOTE :refs/tags/$VERSION"
     exit 1
 fi
 
@@ -30,8 +38,8 @@ echo ""
 git tag -a "$VERSION" -m "$MESSAGE"
 
 echo "Tag created successfully!"
-echo "Pushing to origin..."
+echo "Pushing to $REMOTE..."
 
-git push origin "$VERSION"
+git push "$REMOTE" "$VERSION"
 
 echo "Tag pushed successfully!"
