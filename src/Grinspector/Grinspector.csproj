@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    
+    <!-- Package metadata -->
+    <PackageId>Grinspector</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Peter</Authors>
+    <Description>A .NET source generator library that provides strongly-typed access to private methods for testing purposes.</Description>
+    <PackageTags>source-generator;testing;reflection;private-methods</PackageTags>
+    <PackageProjectUrl>https://github.com/yourusername/Grinspector</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/yourusername/Grinspector</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Include build output -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grinspector.Generator\Grinspector.Generator.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  
+  <!-- Package the generator as an analyzer -->
+  <PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+  
+  <Target Name="GetDependencyTargetPaths">
+    <ItemGroup>
+      <None Include="..\Grinspector.Generator\bin\$(Configuration)\netstandard2.0\Grinspector.Generator.dll" 
+            Pack="true" 
+            PackagePath="analyzers/dotnet/cs" 
+            Visible="false" />
+    </ItemGroup>
+  </Target>
+
+</Project>
