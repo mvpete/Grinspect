@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace Grinspector.Generator;
@@ -128,7 +127,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
         }
 
         // Replace template placeholders
-        return Templates.InternalsWrapper
+        return Templates.Wrapper
             .Replace("{{NAMESPACE}}", targetNamespace)
             .Replace("{{TYPE_NAME}}", simpleTypeName)
             .Replace("{{FULL_TYPE_NAME}}", fullTypeName)
@@ -162,7 +161,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
                 invokeCode = $"return ({returnType})methodInfo.Invoke(_instance, new object?[] {{ {arguments} }})!;";
         }
 
-        var template = Templates.MethodWrapper;
+        var template = Templates.Method;
         return template
             .Replace("{{RETURN_TYPE}}", returnType)
             .Replace("{{METHOD_NAME}}", methodName)
@@ -195,7 +194,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
                 .Replace("{{PROPERTY_NAME}}", propertyName);
         }
 
-        return Templates.PropertyWrapper
+        return Templates.Property
             .Replace("{{PROPERTY_TYPE}}", propertyType)
             .Replace("{{PROPERTY_NAME}}", propertyName)
             .Replace("{{GETTER}}", getter)
@@ -221,7 +220,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
                 .Replace("{{FIELD_NAME}}", fieldName);
         }
 
-        return Templates.FieldWrapper
+        return Templates.Field
             .Replace("{{FIELD_TYPE}}", fieldType)
             .Replace("{{FIELD_NAME}}", fieldName)
             .Replace("{{GETTER}}", getter)
