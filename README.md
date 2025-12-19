@@ -29,6 +29,19 @@ inspector.Bar(1, 2);
 - 🔔 Generated wrapper classes (uses reflection internally)
 - 🎁 Simple, declarative API
 
+## ⚠️ A Word of Caution
+
+**Needing to test private members is usually a code smell.** Like the Grinch himself, this tool exists because sometimes the world isn't perfect. 
+
+If you find yourself reaching for Grinspector, consider:
+- **Refactoring**: Can the private member be extracted into a separate, testable class?
+- **Access modifiers**: Should it be `internal` with `InternalsVisibleTo` instead?
+- **Design**: Are you testing implementation details instead of behavior?
+
+That said, legacy code exists, tight deadlines happen, and sometimes you need to test the Grinch's cave before you can renovate it. When you're in that situation, Grinspector beats raw reflection. But always prefer proper design over testing private implementation details.
+
+*Use responsibly, like spiked eggnog.* 🥃
+
 ## Installation 📦
 
 ```bash
