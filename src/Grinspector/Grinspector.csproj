@@ -8,12 +8,12 @@
     
     <!-- Package metadata -->
     <PackageId>Grinspector</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
     <Authors>Peter Lorimer</Authors>
     <Description>A .NET source generator library that provides strongly-typed access to private methods for testing purposes.</Description>
     <PackageTags>source-generator;testing;reflection;private-methods</PackageTags>
-    <PackageProjectUrl>https://github.com/mvpete/Grinspector</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/mvpete/Grinspector</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mvpete/Grinspect</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mvpete/Grinspect</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     

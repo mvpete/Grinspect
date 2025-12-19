@@ -52,7 +52,7 @@ dotnet add package Grinspector
 
 ## Usage 🎅
 
-1. Mark your test method/class with the `[InternalsAvailable(typeof(T))]` attribute to generate a wrapper class (think of it as your "Naughty List" for private members):
+1. Mark your test method/class with the `[PrivatesAvailable(typeof(T))]` attribute to generate a wrapper class (think of it as your "Naughty List" for private members):
 
 ```csharp
 [Fact]
