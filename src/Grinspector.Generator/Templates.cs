@@ -7,7 +7,7 @@ internal static class Templates
 
 namespace {{NAMESPACE}}
 {
-    public class {{TYPE_NAME}}_Privates
+    public class {{TYPE_NAME}}_Privates{{TYPE_PARAMETERS}}{{TYPE_CONSTRAINTS}}
     {
         private readonly {{FULL_TYPE_NAME}} _instance;
 
@@ -21,7 +21,7 @@ namespace {{NAMESPACE}}
 {{MEMBERS}}
     }
 
-    public static class {{TYPE_NAME}}_Privates_Static
+    public static class {{TYPE_NAME}}_Privates_Static{{TYPE_PARAMETERS}}{{TYPE_CONSTRAINTS}}
     {
 {{STATIC_MEMBERS}}
     }

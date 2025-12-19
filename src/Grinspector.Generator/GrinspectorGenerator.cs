@@ -71,8 +71,11 @@ public class GrinspectorGenerator : IIncrementalGenerator
         if (classSymbol.Name == "Grinspector" && classSymbol.ContainingNamespace?.ToDisplayString() == "Grinspector")
             return;
 
+        // For unbound generic types, we need to use the original definition
+        var targetType = classSymbol.IsUnboundGenericType ? classSymbol.OriginalDefinition : classSymbol;
+
         // Get all private instance methods
-        var privateMethods = classSymbol.GetMembers()
+        var privateMethods = targetType.GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => m.DeclaredAccessibility == Accessibility.Private 
                      && !m.IsStatic 
@@ -80,13 +83,13 @@ public class GrinspectorGenerator : IIncrementalGenerator
             .ToList();
 
         // Get all private instance properties
-        var privateProperties = classSymbol.GetMembers()
+        var privateProperties = targetType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => p.DeclaredAccessibility == Accessibility.Private && !p.IsStatic)
             .ToList();
 
         // Get all private instance fields
-        var privateFields = classSymbol.GetMembers()
+        var privateFields = targetType.GetMembers()
             .OfType<IFieldSymbol>()
             .Where(f => f.DeclaredAccessibility == Accessibility.Private 
                      && !f.IsStatic
@@ -94,7 +97,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
             .ToList();
 
         // Get all private static methods
-        var privateStaticMethods = classSymbol.GetMembers()
+        var privateStaticMethods = targetType.GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => m.DeclaredAccessibility == Accessibility.Private 
                      && m.IsStatic 
@@ -102,13 +105,13 @@ public class GrinspectorGenerator : IIncrementalGenerator
             .ToList();
 
         // Get all private static properties
-        var privateStaticProperties = classSymbol.GetMembers()
+        var privateStaticProperties = targetType.GetMembers()
             .OfType<IPropertySymbol>()
             .Where(p => p.DeclaredAccessibility == Accessibility.Private && p.IsStatic)
             .ToList();
 
         // Get all private static fields
-        var privateStaticFields = classSymbol.GetMembers()
+        var privateStaticFields = targetType.GetMembers()
             .OfType<IFieldSymbol>()
             .Where(f => f.DeclaredAccessibility == Accessibility.Private 
                      && f.IsStatic
@@ -116,7 +119,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
             .ToList();
 
         // Get all private constructors
-        var privateConstructors = classSymbol.GetMembers()
+        var privateConstructors = targetType.GetMembers()
             .OfType<IMethodSymbol>()
             .Where(m => m.DeclaredAccessibility == Accessibility.Private 
                      && m.MethodKind == MethodKind.Constructor)
@@ -127,9 +130,9 @@ public class GrinspectorGenerator : IIncrementalGenerator
             privateConstructors.Count == 0)
             return;
 
-        var source = GenerateGrinspectorPartial(classSymbol, privateMethods, privateProperties, privateFields,
+        var source = GenerateGrinspectorPartial(targetType, privateMethods, privateProperties, privateFields,
             privateStaticMethods, privateStaticProperties, privateStaticFields, privateConstructors);
-        var fileName = $"{classSymbol.Name}_Privates_{classSymbol.ContainingNamespace?.ToDisplayString().Replace(".", "_")}.g.cs";
+        var fileName = $"{targetType.Name}_Privates_{targetType.ContainingNamespace?.ToDisplayString().Replace(".", "_")}.g.cs";
         context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
     }
 
@@ -141,6 +144,43 @@ public class GrinspectorGenerator : IIncrementalGenerator
         var fullTypeName = targetType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var simpleTypeName = targetType.Name;
         var targetNamespace = targetType.ContainingNamespace?.ToDisplayString() ?? "Global";
+        
+        // Handle generic type parameters
+        var typeParameters = "";
+        var typeConstraints = "";
+        if (targetType.IsGenericType)
+        {
+            var typeParams = targetType.TypeParameters.Select(tp => tp.Name);
+            typeParameters = $"<{string.Join(", ", typeParams)}>";
+            
+            // Generate constraints
+            var constraintsList = new List<string>();
+            foreach (var typeParam in targetType.TypeParameters)
+            {
+                var constraints = new List<string>();
+                
+                if (typeParam.HasReferenceTypeConstraint)
+                    constraints.Add("class");
+                if (typeParam.HasValueTypeConstraint)
+                    constraints.Add("struct");
+                if (typeParam.HasUnmanagedTypeConstraint)
+                    constraints.Add("unmanaged");
+                if (typeParam.HasNotNullConstraint)
+                    constraints.Add("notnull");
+                    
+                foreach (var constraint in typeParam.ConstraintTypes)
+                    constraints.Add(constraint.ToDisplayString());
+                    
+                if (typeParam.HasConstructorConstraint)
+                    constraints.Add("new()");
+                
+                if (constraints.Any())
+                    constraintsList.Add($"        where {typeParam.Name} : {string.Join(", ", constraints)}");
+            }
+            
+            if (constraintsList.Any())
+                typeConstraints = "\n" + string.Join("\n", constraintsList);
+        }
         
         // Generate instance members
         var membersBuilder = new StringBuilder();
@@ -189,6 +229,8 @@ public class GrinspectorGenerator : IIncrementalGenerator
         return Templates.Wrapper
             .Replace("{{NAMESPACE}}", targetNamespace)
             .Replace("{{TYPE_NAME}}", simpleTypeName)
+            .Replace("{{TYPE_PARAMETERS}}", typeParameters)
+            .Replace("{{TYPE_CONSTRAINTS}}", typeConstraints)
             .Replace("{{FULL_TYPE_NAME}}", fullTypeName)
             .Replace("{{MEMBERS}}", membersBuilder.ToString())
             .Replace("{{STATIC_MEMBERS}}", staticMembersBuilder.ToString());
@@ -201,6 +243,15 @@ public class GrinspectorGenerator : IIncrementalGenerator
         var fullTypeName = method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var typeFullName = method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var isVoid = method.ReturnsVoid;
+        
+        // Check if method is generic
+        var isGeneric = method.TypeParameters.Length > 0;
+        
+        // For generic methods, we can't pre-compile them - use reflection fallback
+        if (isGeneric)
+        {
+            return GenerateGenericMethodWrapper(method, isStatic);
+        }
         
         var parameters = string.Join(", ", method.Parameters.Select(p => 
             $"{p.Type.ToDisplayString()} {p.Name}"));
@@ -451,5 +502,91 @@ public class GrinspectorGenerator : IIncrementalGenerator
         result = result.Replace("CompileConstructor()", $"CompileConstructor{compileSuffix}()");
         
         return result;
+    }
+
+    private static string GenerateGenericMethodWrapper(IMethodSymbol method, bool isStatic)
+    {
+        var methodName = method.Name;
+        var returnType = method.ReturnType.ToDisplayString();
+        var typeFullName = method.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var isVoid = method.ReturnsVoid;
+        
+        // Build type parameters <T>, <T1, T2>, etc.
+        var typeParamsList = string.Join(", ", method.TypeParameters.Select(tp => tp.Name));
+        var typeParamsDecl = $"<{typeParamsList}>";
+        
+        // Build constraints: where T : IComparable<T>
+        var constraints = new StringBuilder();
+        foreach (var typeParam in method.TypeParameters)
+        {
+            var constraintClauses = new List<string>();
+            
+            if (typeParam.HasReferenceTypeConstraint)
+                constraintClauses.Add("class");
+            if (typeParam.HasValueTypeConstraint)
+                constraintClauses.Add("struct");
+            if (typeParam.HasConstructorConstraint)
+                constraintClauses.Add("new()");
+            
+            foreach (var constraintType in typeParam.ConstraintTypes)
+            {
+                constraintClauses.Add(constraintType.ToDisplayString());
+            }
+            
+            if (constraintClauses.Count > 0)
+            {
+                constraints.Append($"\n            where {typeParam.Name} : {string.Join(", ", constraintClauses)}");
+            }
+        }
+        
+        var parameters = string.Join(", ", method.Parameters.Select(p => 
+            $"{p.Type.ToDisplayString()} {p.Name}"));
+        
+        var arguments = string.Join(", ", method.Parameters.Select(p => p.Name));
+        var bindingFlags = isStatic 
+            ? "System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic"
+            : "System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic";
+        
+        var invokeTarget = isStatic ? "null" : "_instance";
+        var typeArguments = $"new System.Type[] {{ {string.Join(", ", method.TypeParameters.Select(tp => $"typeof({tp.Name})"))} }}";
+        
+        // For generic methods, we need to find by name and parameter count since GetMethod can't handle unbound generics easily
+        var genericArityFilter = $@"
+            var methods = typeof({typeFullName}).GetMethods({bindingFlags})
+                .Where(m => m.Name == ""{methodName}"" 
+                    && m.IsGenericMethodDefinition 
+                    && m.GetGenericArguments().Length == {method.TypeParameters.Length}
+                    && m.GetParameters().Length == {method.Parameters.Length})
+                .ToArray();
+            
+            if (methods.Length == 0)
+                throw new System.InvalidOperationException(""Method '{methodName}' not found"");
+            
+            var methodInfo = methods[0];";
+        
+        string invokeCode;
+        if (isVoid)
+        {
+            if (method.Parameters.Length == 0)
+                invokeCode = $"genericMethod.Invoke({invokeTarget}, null);";
+            else
+                invokeCode = $"genericMethod.Invoke({invokeTarget}, new object?[] {{ {arguments} }});";
+        }
+        else
+        {
+            if (method.Parameters.Length == 0)
+                invokeCode = $"return ({returnType})genericMethod.Invoke({invokeTarget}, null)!;";
+            else
+                invokeCode = $"return ({returnType})genericMethod.Invoke({invokeTarget}, new object?[] {{ {arguments} }})!;";
+        }
+        
+        return $@"        public {(isStatic ? "static " : "")}{returnType} {methodName}{typeParamsDecl}({parameters}){constraints}
+        {{{genericArityFilter}
+
+            var genericMethod = methodInfo.MakeGenericMethod({typeArguments});
+            {invokeCode}
+        }}
+
+";
     }
 }
