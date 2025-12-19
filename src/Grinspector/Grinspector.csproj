@@ -8,7 +8,7 @@
     
     <!-- Package metadata -->
     <PackageId>Grinspector</PackageId>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
     <Authors>Peter Lorimer</Authors>
     <Description>A .NET source generator library that provides strongly-typed access to private methods for testing purposes.</Description>
     <PackageTags>source-generator;testing;reflection;private-methods</PackageTags>

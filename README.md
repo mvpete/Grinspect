@@ -22,7 +22,9 @@ inspector.Bar(1, 2);
 
 ## Features 🎁
 
-- 🎄 Strongly-typed access to private methods, properties, and fields
+- 🎄 Strongly-typed access to private instance methods, properties, and fields
+- 🌟 Static member support: Access private static methods, properties, and fields
+- 🏗️ Private constructor support: Create instances via private constructors
 - ⭐ IntelliSense support (even Santa's elves would be jealous)
 - ✨ Compile-time safety
 - 🎅 Refactoring-safe: Renaming private members causes compiler errors, not runtime failures
@@ -51,6 +53,8 @@ dotnet add package Grinspector
 *Unwrap the gift of type-safe private access!*
 
 ## Usage 🎅
+
+### Instance Members
 
 1. Mark your test method/class with the `[PrivatesAvailable(typeof(T))]` attribute to generate a wrapper class (think of it as your "Naughty List" for private members):
 
@@ -87,21 +91,87 @@ public class MyClass
 }
 ```
 
-The source generator will create a `MyClass_Privates` class with public methods that call the private methods using reflection.
+### Static Members
+
+Access private static members through the generated `_Static` class:
+
+```csharp
+[Fact]
+[PrivatesAvailable(typeof(MyClass))]
+public void TestPrivateStaticMembers()
+{
+    // Access private static methods
+    int result = MyClass_Privates_Static.MultiplyBy2(5);  // returns 10
+    
+    // Access private static fields
+    MyClass_Privates_Static._counter = 42;
+    int value = MyClass_Privates_Static._counter;
+    
+    // Access private static properties
+    MyClass_Privates_Static.Configuration = "test";
+}
+```
+
+```csharp
+public class MyClass
+{
+    private static int _counter;
+    private static string Configuration { get; set; }
+    
+    private static int MultiplyBy2(int x) => x * 2;
+}
+```
+
+### Private Constructors
+
+Create instances through private constructors:
+
+```csharp
+[Fact]
+[PrivatesAvailable(typeof(Singleton))]
+public void TestPrivateConstructor()
+{
+    // Create instance via private constructor
+    var instance = Singleton_Privates_Static.CreateInstance("config", 123);
+    
+    // Then inspect its private members
+    var inspector = new Singleton_Privates(instance);
+    inspector.Initialize();
+}
+```
+
+```csharp
+public class Singleton
+{
+    private Singleton(string config, int value)
+    {
+        // Private constructor logic
+    }
+    
+    private void Initialize() { /* ... */ }
+}
+```
+
+The source generator will create:
+- `MyClass_Privates` class for instance members
+- `MyClass_Privates_Static` class for static members and constructors
 
 ## How It Works 🎪
 
 Grinspector uses C# source generators to steal... er, *inspect* your private members:
 
-1. Scan for test methods/classes decorated with `[PrivatesAvailable(typeof(T))]`
-2. Analyze the target type `T` for private instance members (methods, properties, fields)
-3. Generate a `T_Privates` wrapper class with public accessors that use reflection at runtime
+### Source Generator
+1. Scans for test methods/classes decorated with `[PrivatesAvailable(typeof(T))]`
+2. Analyzes the target type `T` for private members (instance and static)
+3. Generates wrapper classes:
+   - `T_Privates` for instance members
+   - `T_Privates_Static` for static members and constructors
 
 This provides:
 
 - **Type Safety**: The compiler knows about all private members and their signatures
 - **IntelliSense**: Full IDE support with autocomplete and documentation
-- **Refactoring Safety**: When you rename a private method/property/field, your test code breaks at compile-time instead of runtime, and IDEs can find all references
+- **Refactoring Safety**: When you rename a private method/property/field, the generator re-runs and your test code breaks at compile-time with standard compiler errors
 - **Opt-In**: Only generates wrappers for types you explicitly mark with the attribute
 - **Test-Friendly**: Designed specifically for testing scenarios where you need to access private implementation details
 

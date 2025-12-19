@@ -20,6 +20,11 @@ namespace {{NAMESPACE}}
 
 {{MEMBERS}}
     }
+
+    public static class {{TYPE_NAME}}_Privates_Static
+    {
+{{STATIC_MEMBERS}}
+    }
 }
 ";
 
@@ -36,7 +41,26 @@ namespace {{NAMESPACE}}
 
 ";
 
+    public const string StaticMethod = @"        public static {{RETURN_TYPE}} {{METHOD_NAME}}({{PARAMETERS}})
+        {
+            var methodInfo = typeof({{TYPE_FULL_NAME}}).GetMethod(""{{METHOD_NAME}}"", 
+                {{BINDING_FLAGS}});
+
+            if (methodInfo == null)
+                throw new System.InvalidOperationException(""Method '{{METHOD_NAME}}' not found"");
+
+            {{INVOKE}}
+        }
+
+";
+
     public const string Property = @"        public {{PROPERTY_TYPE}} {{PROPERTY_NAME}}
+        {
+{{GETTER}}{{SETTER}}        }
+
+";
+
+    public const string StaticProperty = @"        public static {{PROPERTY_TYPE}} {{PROPERTY_NAME}}
         {
 {{GETTER}}{{SETTER}}        }
 
@@ -54,6 +78,18 @@ namespace {{NAMESPACE}}
             }
 ";
 
+    public const string StaticPropertyGetter = @"            get
+            {
+                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                    {{BINDING_FLAGS}});
+
+                if (propertyInfo == null)
+                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+                return ({{PROPERTY_TYPE}})propertyInfo.GetValue(null)!;
+            }
+";
+
     public const string PropertySetter = @"            set
             {
                 var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
@@ -66,7 +102,25 @@ namespace {{NAMESPACE}}
             }
 ";
 
+    public const string StaticPropertySetter = @"            set
+            {
+                var propertyInfo = typeof({{TYPE_FULL_NAME}}).GetProperty(""{{PROPERTY_NAME}}"", 
+                    {{BINDING_FLAGS}});
+
+                if (propertyInfo == null)
+                    throw new System.InvalidOperationException(""Property '{{PROPERTY_NAME}}' not found"");
+
+                propertyInfo.SetValue(null, value);
+            }
+";
+
     public const string Field = @"        public {{FIELD_TYPE}} {{FIELD_NAME}}
+        {
+{{GETTER}}{{SETTER}}        }
+
+";
+
+    public const string StaticField = @"        public static {{FIELD_TYPE}} {{FIELD_NAME}}
         {
 {{GETTER}}{{SETTER}}        }
 
@@ -84,6 +138,18 @@ namespace {{NAMESPACE}}
             }
 ";
 
+    public const string StaticFieldGetter = @"            get
+            {
+                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                    {{BINDING_FLAGS}});
+
+                if (fieldInfo == null)
+                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+                return ({{FIELD_TYPE}})fieldInfo.GetValue(null)!;
+            }
+";
+
     public const string FieldSetter = @"            set
             {
                 var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
@@ -94,5 +160,33 @@ namespace {{NAMESPACE}}
 
                 fieldInfo.SetValue(_instance, value);
             }
+";
+
+    public const string StaticFieldSetter = @"            set
+            {
+                var fieldInfo = typeof({{TYPE_FULL_NAME}}).GetField(""{{FIELD_NAME}}"", 
+                    {{BINDING_FLAGS}});
+
+                if (fieldInfo == null)
+                    throw new System.InvalidOperationException(""Field '{{FIELD_NAME}}' not found"");
+
+                fieldInfo.SetValue(null, value);
+            }
+";
+
+    public const string Constructor = @"        public static {{TYPE_FULL_NAME}} CreateInstance({{PARAMETERS}})
+        {
+            var ctorInfo = typeof({{TYPE_FULL_NAME}}).GetConstructor(
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                null,
+                new System.Type[] { {{PARAM_TYPES}} },
+                null);
+
+            if (ctorInfo == null)
+                throw new System.InvalidOperationException(""Constructor not found"");
+
+            {{INVOKE}}
+        }
+
 ";
 }
