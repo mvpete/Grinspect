@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Grinspector.Tests;
 
-[InternalsAvailable(typeof(Foo))]
+[PrivatesAvailable(typeof(Foo))]
 public class GrinspectorTests
 {
     [Fact]
@@ -10,7 +10,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         var result = inspector.Bar(1, 2);
@@ -24,7 +24,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         var result = inspector.GetSecret();
@@ -38,7 +38,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         inspector.DoSomething();
@@ -52,7 +52,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         inspector._value = 100;
@@ -67,7 +67,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         inspector.SecretValue = "new secret";
@@ -81,7 +81,7 @@ public class GrinspectorTests
     {
         // Arrange
         var foo = new Foo();
-        var inspector = new Internals_Foo(foo);
+        var inspector = new Foo_Privates(foo);
 
         // Act
         var result = inspector.ReadOnlyValue;

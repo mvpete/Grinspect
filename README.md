@@ -16,7 +16,7 @@ method.Invoke(fooInstance, new object[] { 1, 2 });
 Use Grinspector:
 
 ```csharp
-var inspector = new Internals_Foo(fooInstance);
+var inspector = new Foo_Privates(fooInstance);
 inspector.Bar(1, 2);
 ```
 
@@ -56,11 +56,11 @@ dotnet add package Grinspector
 
 ```csharp
 [Fact]
-[InternalsAvailable(typeof(MyClass))]
+[PrivatesAvailable(typeof(MyClass))]
 public void TestPrivateMethods()
 {
     var obj = new MyClass();
-    var inspector = new Internals_MyClass(obj);
+    var inspector = new MyClass_Privates(obj);
     
     // Access private methods with full type safety
     int result = inspector.Add(5, 3);        // returns 8
@@ -87,15 +87,15 @@ public class MyClass
 }
 ```
 
-The source generator will create an `Internals_MyClass` class with public methods that call the private methods using reflection.
+The source generator will create a `MyClass_Privates` class with public methods that call the private methods using reflection.
 
 ## How It Works 🎪
 
 Grinspector uses C# source generators to steal... er, *inspect* your private members:
 
-1. Scan for test methods/classes decorated with `[InternalsAvailable(typeof(T))]`
+1. Scan for test methods/classes decorated with `[PrivatesAvailable(typeof(T))]`
 2. Analyze the target type `T` for private instance members (methods, properties, fields)
-3. Generate an `Internals_T` wrapper class with public accessors that use reflection at runtime
+3. Generate a `T_Privates` wrapper class with public accessors that use reflection at runtime
 
 This provides:
 

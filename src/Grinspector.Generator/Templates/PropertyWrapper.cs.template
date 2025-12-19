@@ -1,4 +1,0 @@
-        public {{PROPERTY_TYPE}} {{PROPERTY_NAME}}
-        {
-{{GETTER}}{{SETTER}}        }
-

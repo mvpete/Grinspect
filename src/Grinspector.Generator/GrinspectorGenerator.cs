@@ -47,11 +47,11 @@ public class GrinspectorGenerator : IIncrementalGenerator
         if (symbol == null)
             yield break;
             
-        // Find all [InternalsAvailable(typeof(...))] attributes
+        // Find all [PrivatesAvailable(typeof(...))] attributes
         foreach (var attribute in symbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.Name != "InternalsAvailableAttribute" && 
-                attribute.AttributeClass?.Name != "InternalsAvailable")
+            if (attribute.AttributeClass?.Name != "PrivatesAvailableAttribute" && 
+                attribute.AttributeClass?.Name != "PrivatesAvailable")
                 continue;
                 
             // Get the type from the first constructor argument
@@ -98,7 +98,7 @@ public class GrinspectorGenerator : IIncrementalGenerator
             return;
 
         var source = GenerateGrinspectorPartial(classSymbol, privateMethods, privateProperties, privateFields);
-        var fileName = $"Internals_{classSymbol.Name}_{classSymbol.ContainingNamespace?.ToDisplayString().Replace(".", "_")}.g.cs";
+        var fileName = $"{classSymbol.Name}_Privates_{classSymbol.ContainingNamespace?.ToDisplayString().Replace(".", "_")}.g.cs";
         context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
     }
 

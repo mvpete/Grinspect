@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Grinspector.Tests;
 
-[InternalsAvailable(typeof(Counter))]
+[PrivatesAvailable(typeof(Counter))]
 public class PublicPrivateInteractionTests
 {
     [Fact]
@@ -10,7 +10,7 @@ public class PublicPrivateInteractionTests
     {
         // Arrange
         var counter = new Counter();
-        var inspector = new Internals_Counter(counter);
+        var inspector = new Counter_Privates(counter);
 
         // Act - call public method that changes private field
         counter.Increment();
@@ -26,7 +26,7 @@ public class PublicPrivateInteractionTests
     {
         // Arrange
         var counter = new Counter();
-        var inspector = new Internals_Counter(counter);
+        var inspector = new Counter_Privates(counter);
 
         // Act - call private method that changes private field
         inspector.SetCount(42);
@@ -40,7 +40,7 @@ public class PublicPrivateInteractionTests
     {
         // Arrange
         var counter = new Counter();
-        var inspector = new Internals_Counter(counter);
+        var inspector = new Counter_Privates(counter);
 
         // Act - call public method that changes private property
         counter.SetMessage("Hello");
@@ -54,7 +54,7 @@ public class PublicPrivateInteractionTests
     {
         // Arrange
         var counter = new Counter();
-        var inspector = new Internals_Counter(counter);
+        var inspector = new Counter_Privates(counter);
 
         // Act - change private property
         inspector.Message = "Test Message";
@@ -68,7 +68,7 @@ public class PublicPrivateInteractionTests
     {
         // Arrange
         var counter = new Counter();
-        var inspector = new Internals_Counter(counter);
+        var inspector = new Counter_Privates(counter);
 
         // Act
         counter.Increment();

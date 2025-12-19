@@ -1,4 +1,0 @@
-        public {{FIELD_TYPE}} {{FIELD_NAME}}
-        {
-{{GETTER}}{{SETTER}}        }
-

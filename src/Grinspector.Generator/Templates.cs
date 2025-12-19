@@ -7,11 +7,11 @@ internal static class Templates
 
 namespace {{NAMESPACE}}
 {
-    public class Internals_{{TYPE_NAME}}
+    public class {{TYPE_NAME}}_Privates
     {
         private readonly {{FULL_TYPE_NAME}} _instance;
 
-        public Internals_{{TYPE_NAME}}({{FULL_TYPE_NAME}} instance)
+        public {{TYPE_NAME}}_Privates({{FULL_TYPE_NAME}} instance)
         {
             if (instance == null)
                 throw new System.ArgumentNullException(nameof(instance));
