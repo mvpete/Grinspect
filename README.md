@@ -1,5 +1,9 @@
 # Grinspector 🎄
 
+[![Build Status](https://github.com/mvpete/Grinspect/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/mvpete/Grinspect/actions/workflows/ci-cd.yml)
+[![Tests](https://img.shields.io/badge/tests-30%2F30-brightgreen)](https://github.com/mvpete/Grinspect/actions)
+[![NuGet](https://img.shields.io/nuget/v/Grinspector.svg)](https://www.nuget.org/packages/Grinspector/)
+
 *"You're a mean one, Mr. Private Method..."* 🎅
 
 A .NET source generator library that sneaks into your private methods, properties, and fields for testing purposes - just like the Grinch sneaking into Whoville! No more wrestling with reflection strings and binding flags.
